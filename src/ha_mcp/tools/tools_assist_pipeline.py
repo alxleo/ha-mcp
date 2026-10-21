@@ -107,6 +107,8 @@ class AssistPipelineTools:
 
     async def _get_pipeline(self, pipeline_id: str | None) -> dict[str, Any]:
         """Fetch one pipeline, or the preferred one when no ID is given."""
+        if pipeline_id == "preferred":
+            pipeline_id = None
         message: dict[str, Any] = {"type": "assist_pipeline/pipeline/get"}
         if pipeline_id is not None:
             message["pipeline_id"] = pipeline_id
@@ -224,15 +226,11 @@ class AssistPipelineTools:
                 )
             )
 
-        data = await self._send_pipeline_message(
-            {"type": "assist_pipeline/pipeline/get", "pipeline_id": pipeline_id},
-            operation="get",
-            pipeline_id=pipeline_id,
-        )
+        data = await self._get_pipeline(pipeline_id)
         return {
             "success": True,
             "operation": "get",
-            "pipeline_id": pipeline_id,
+            "pipeline_id": data.get("id", pipeline_id),
             "pipeline": data,
             "message": (
                 f"Found Assist pipeline: {data.get('name', pipeline_id)}"
@@ -254,6 +252,9 @@ class AssistPipelineTools:
                     ],
                 )
             )
+
+        if pipeline_id == "preferred":
+            pipeline_id = str((await self._get_pipeline(None))["id"])
 
         await self._send_pipeline_message(
             {
@@ -322,6 +323,8 @@ class AssistPipelineTools:
 
         source_pipeline_id = pipeline_id if action == "update" else base_pipeline_id
         pipeline = await self._get_pipeline(source_pipeline_id)
+        if action == "update":
+            pipeline_id = str(pipeline["id"])
         payload = _drop_pipeline_id(pipeline)
         payload.update(updates)
 
@@ -423,6 +426,7 @@ class AssistPipelineTools:
 
         if pipeline_id is not None:
             pipeline = await self._get_pipeline(pipeline_id)
+            pipeline_id = str(pipeline["id"])
             if agent_id is None:
                 engine = pipeline.get("conversation_engine")
                 agent_id = engine if isinstance(engine, str) else None
