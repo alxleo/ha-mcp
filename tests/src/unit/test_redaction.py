@@ -161,6 +161,38 @@ class TestCollectAddonSecretValues:
         assert "root" not in values
 
 
+@pytest.mark.parametrize("key_type", ["OPENSSH", "RSA", "ENCRYPTED"])
+@pytest.mark.parametrize("line_list", [False, True])
+def test_private_key_options_without_password_schema_are_redacted(
+    redact_on, key_type, line_list
+):
+    lines = [
+        f"-----BEGIN {key_type} PRIVATE KEY-----",
+        "synthetic_private_key_body_not_a_real_key",
+        f"-----END {key_type} PRIVATE KEY-----",
+    ]
+    key = lines if line_list else "\n".join(lines)
+    schema = [{"name": "deployment_key", "type": "string", "multiple": line_list}]
+    options = {"deployment_key": key, "repository": "git@example.invalid:config.git"}
+
+    out = redact_addon_options(options, schema)
+    assert out["deployment_key"] == ([REDACTED_SET] * 3 if line_list else REDACTED_SET)
+    assert out["repository"] == options["repository"]
+    assert options["deployment_key"] == key
+
+    register_known_secret_values(collect_addon_secret_values(options, schema))
+    log = "\n".join(f"app log: {line}" for line in lines)
+    assert "synthetic_private_key_body" not in scrub_text(log, known_secret_values())
+
+
+def test_public_key_material_remains_available_for_diagnostics():
+    key = "-----BEGIN PUBLIC KEY-----\nsynthetic_public_key\n-----END PUBLIC KEY-----"
+    schema = [{"name": "public_key", "type": "string"}]
+    options = {"public_key": key}
+    assert redact_addon_options(options, schema) == options
+    assert collect_addon_secret_values(options, schema) == set()
+
+
 class TestSentinels:
     def test_sentinel_for_set_and_empty(self):
         assert sentinel_for("value") == REDACTED_SET

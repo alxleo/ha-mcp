@@ -31,7 +31,7 @@ options:
   # which rejects any option the schema does not declare.
   enable_security_policy_tool: false
   read_only_mode: false
-  redact_secrets: false
+  redact_secrets: true
   # Master beta gate — also dev-only (stable's schema does not declare
   # this key; the stable web UI master remains the gate there). Default
   # ON in dev so the master is pre-unlocked; the user only has to
@@ -76,7 +76,7 @@ options:
   verify_ssl: true
 schema:
   backup_hint: list(strong|normal|weak|auto)
-  secret_path: str?
+  secret_path: password?
   enable_tool_search: bool?
   enable_tool_security_policies: bool?
   enable_security_policy_tool: bool?

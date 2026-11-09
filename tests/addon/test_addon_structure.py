@@ -93,8 +93,10 @@ class TestAddonStructure:
         with open("pyproject.toml", "rb") as f:
             pyproject = tomllib.load(f)
         expected_version = pyproject["project"]["version"]
-        assert config["version"] == expected_version, (
-            f"Add-on version {config['version']} should match package version {expected_version}"
+        assert re.fullmatch(
+            rf"{re.escape(expected_version)}(?:-homelab\.[1-9]\d*)?", config["version"]
+        ), (
+            f"App version {config['version']} must be based on package {expected_version}"
         )
 
         # Verify essential configurations
@@ -102,7 +104,7 @@ class TestAddonStructure:
         assert config["homeassistant_api"] is True, "homeassistant_api required"
 
         # Verify image field uses per-architecture naming
-        assert config["image"] == "ghcr.io/homeassistant-ai/ha-mcp-addon-{arch}", (
+        assert config["image"] == "ghcr.io/alxleo/ha-mcp-addon-{arch}", (
             "image field must use per-architecture naming with {arch} placeholder"
         )
 
@@ -134,8 +136,8 @@ class TestAddonStructure:
         assert "secret_path" in config["schema"], (
             "schema must include secret_path field"
         )
-        assert config["schema"]["secret_path"] == "str?", (
-            "secret_path schema should be optional string (str?)"
+        assert config["schema"]["secret_path"] == "password?", (
+            "secret_path must be marked as a password for diagnostic redaction"
         )
 
         # Verify backup_hint configuration
@@ -185,7 +187,7 @@ class TestAddonStructure:
             # Redact Secrets (#2157) — non-beta safety toggle, default OFF
             # (no redaction runs while off; the sentinel write guards are
             # unconditional — see config.py).
-            "redact_secrets": ("bool?", False),
+            "redact_secrets": ("bool?", True),
             # Policy-editing tool (#2148) — non-beta, default OFF (an
             # on-by-default value would hand every connected agent the
             # ability to rewrite the approval gates).

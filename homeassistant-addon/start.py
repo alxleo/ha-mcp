@@ -542,7 +542,7 @@ def main() -> int:
     enable_tool_search = False  # default
     enable_tool_security_policies = False  # default
     read_only_mode = False  # default (discussion #1569 — non-beta, off by default)
-    redact_secrets = False  # default (issue #2157 — non-beta, off by default)
+    redact_secrets = True  # Household app diagnostics redact by default.
     enable_security_policy_tool = False  # default (issue #2148 — non-beta, off)
     enable_yaml_config_editing = False  # default
     yaml_config_in_config = False  # presence flag
@@ -617,7 +617,7 @@ def main() -> int:
                 else False
             )
             read_only_mode = resolve_bool_option(config, "read_only_mode", False)
-            redact_secrets = resolve_bool_option(config, "redact_secrets", False)
+            redact_secrets = resolve_bool_option(config, "redact_secrets", True)
             enable_security_policy_tool = resolve_bool_option(
                 config, "enable_security_policy_tool", False
             )
